@@ -1,0 +1,29 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 620455726130.dkr.ecr.us-east-1.amazonaws.com
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t brain-tasks:latest .
+      - docker tag brain-tasks:latest 620455726130.dkr.ecr.us-east-1.amazonaws.com/brain-tasks:latest
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push 620455726130.dkr.ecr.us-east-1.amazonaws.com/brain-tasks:latest
+
+      - echo updating kubeconfig...
+      - aws eks update-kubeconfig --region us-east-1 --name brain-tasks-cluster
+
+      - echo Deploying to Kubernetes...
+      - kubectl apply -f k8s/deployment.yaml
+      - kubectl apply -f k8s/service.yaml
+
+      - kubectl set image deployment/brain-tasks-deployment brain-tasks=620455726130.dkr.ecr.us-east-1.amazonaws.com/brain-tasks:latest
+
+      - kubectl rollout status deployment/brain-tasks-deployment
+
