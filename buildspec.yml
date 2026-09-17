@@ -16,14 +16,4 @@ phases:
       - echo Pushing the Docker image...
       - docker push 620455726130.dkr.ecr.us-east-1.amazonaws.com/brain-tasks:$CODEBUILD_RESOLVED_SOURCE_VERSION
 
-      - echo updating kubeconfig...
-      - aws eks update-kubeconfig --region us-east-1 --name brain-tasks-cluster
-
-      - echo Deploying to Kubernetes...
-      - kubectl apply -f k8s/deployment.yaml
-      - kubectl apply -f k8s/service.yaml
-
-      - kubectl set image deployment/brain-tasks-deployment brain-tasks=620455726130.dkr.ecr.us-east-1.amazonaws.com/brain-tasks:$CODEBUILD_RESOLVED_SOURCE_VERSION
-
-      - kubectl rollout status deployment/brain-tasks-deployment
-
+      
