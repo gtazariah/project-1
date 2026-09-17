@@ -1,19 +1,37 @@
 version: 0.2
+
+env:
+  variables:
+    AWS_REGION: "us-east-1"
+    ECR_REPOSITORY: "brain-tasks"
+  exported-variables:
+    - IMAGE_TAG
+    - ECR_URI
+
 phases:
+
   pre_build:
     commands:
-      - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 620455726130.dkr.ecr.us-east-1.amazonaws.com
+      - echo "Logging in to Amazon ECR..."
+      - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - ECR_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY
+      - IMAGE_TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo "ECR URI = $ECR_URI"
+      - echo "IMAGE TAG = $IMAGE_TAG"
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
   build:
     commands:
-      - echo Build started on `date`
-      - echo Building the Docker image...
-      - docker build -t brain-tasks:latest .
-      - docker tag brain-tasks:latest 620455726130.dkr.ecr.us-east-1.amazonaws.com/brain-tasks:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo "Build started on `date`"
+      - echo "Building Docker image..."
+      - docker build -t $ECR_URI:$IMAGE_TAG .
+      - docker tag $ECR_URI:$IMAGE_TAG $ECR_URI:latest
+
   post_build:
     commands:
-      - echo Build completed on `date`
-      - echo Pushing the Docker image...
-      - docker push 620455726130.dkr.ecr.us-east-1.amazonaws.com/brain-tasks:$CODEBUILD_RESOLVED_SOURCE_VERSION
-
-      
+      - echo "Build completed on `date`"
+      - echo "Pushing image to ECR..."
+      - docker push $ECR_URI:$IMAGE_TAG
+      - docker push $ECR_URI:latest
+      - echo "IMAGE_TAG = $IMAGE_TAG"
+      - echo "ECR_URI = $ECR_URI"
