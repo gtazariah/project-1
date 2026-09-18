@@ -4,3 +4,5 @@ auto aws codepipeling auto trigger
 
 18-9-26
 auto aws codepipeling auto trigger
+
+test entry to auto trigger check
